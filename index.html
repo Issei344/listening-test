@@ -1,1 +1,792 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>日本語リスニング理解度テスト｜自動読み上げ</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=Noto+Sans+JP:wght@400;500;700&display=swap');
+
+:root{
+  --bg:#FAF8F4;
+  --panel:#FFFFFF;
+  --ink:#22303F;
+  --ink-soft:#63707D;
+  --accent:#E8A33D;
+  --accent-deep:#C67D1C;
+  --success:#4F8F68;
+  --success-bg:#E9F2EC;
+  --danger:#C1543C;
+  --danger-bg:#FBEBE7;
+  --line:#E6E0D3;
+  --ring-track:#EFE9DA;
+}
+
+*{box-sizing:border-box;}
+
+body{
+  margin:0;
+  min-height:100vh;
+  background:
+    radial-gradient(1200px 600px at 15% -10%, rgba(232,163,61,0.09), transparent 60%),
+    var(--bg);
+  color:var(--ink);
+  font-family:'Noto Sans JP', sans-serif;
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+  padding:36px 16px 60px;
+}
+
+.wrap{
+  width:100%;
+  max-width:560px;
+}
+
+.masthead{
+  margin-bottom:22px;
+  padding:0 4px;
+}
+.masthead h1{
+  font-family:'Zen Maru Gothic', sans-serif;
+  font-weight:700;
+  font-size:22px;
+  margin:0 0 4px;
+  letter-spacing:0.01em;
+}
+.masthead p{
+  margin:0;
+  font-size:13.5px;
+  color:var(--ink-soft);
+  line-height:1.6;
+}
+
+.card{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:22px;
+  padding:26px 24px 22px;
+  box-shadow:0 1px 2px rgba(34,48,63,0.04), 0 12px 32px -18px rgba(34,48,63,0.28);
+}
+
+.dots{
+  display:flex;
+  gap:8px;
+  justify-content:center;
+  margin-bottom:26px;
+  flex-wrap:wrap;
+}
+.dot{
+  width:30px;height:30px;
+  border-radius:9px;
+  border:1.5px solid var(--line);
+  background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;
+  font-weight:700;
+  color:var(--ink-soft);
+  cursor:pointer;
+  transition:all .18s ease;
+}
+.dot:hover{border-color:var(--accent-deep);}
+.dot.done{background:var(--success-bg);border-color:var(--success);color:var(--success);}
+.dot.current{background:var(--accent);border-color:var(--accent-deep);color:#fff;transform:scale(1.12);}
+
+.stage{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding:8px 0 20px;
+}
+
+.ring-wrap{
+  position:relative;
+  width:196px;height:196px;
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:6px;
+}
+.ring-wrap svg{ position:absolute; inset:0; transform:rotate(-90deg); }
+.ring-track{ fill:none; stroke:var(--ring-track); stroke-width:8; }
+.ring-progress{ fill:none; stroke:var(--accent); stroke-width:8; stroke-linecap:round; transition:stroke-dashoffset .18s linear, stroke .25s ease; }
+
+.numeral{
+  font-family:'Zen Maru Gothic', sans-serif;
+  font-weight:900;
+  font-size:64px;
+  line-height:1;
+  color:var(--ink);
+}
+.numeral.label{ font-size:32px; }
+.numeral small{
+  font-size:20px;
+  font-weight:700;
+  color:var(--ink-soft);
+  margin-left:2px;
+}
+
+.status{
+  margin-top:14px;
+  font-size:14.5px;
+  font-weight:500;
+  color:var(--ink-soft);
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-height:20px;
+  text-align:center;
+}
+.status .pulse{
+  width:9px;height:9px;border-radius:50%;
+  background:var(--accent);
+  animation:pulse 1.1s ease-in-out infinite;
+  flex:none;
+}
+.status.finished{color:var(--success); font-weight:700;}
+.status.finished .pulse{background:var(--success); animation:none;}
+@keyframes pulse{
+  0%,100%{ transform:scale(0.8); opacity:0.55; }
+  50%{ transform:scale(1.25); opacity:1; }
+}
+
+.controls{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  margin-top:6px;
+}
+button{
+  font-family:'Noto Sans JP', sans-serif;
+  border:none;
+  cursor:pointer;
+  transition:transform .12s ease, background .15s ease, box-shadow .15s ease;
+}
+button:active{ transform:scale(0.96); }
+button:disabled{ opacity:0.4; cursor:not-allowed; transform:none; }
+
+.btn-icon{
+  width:46px;height:46px;
+  border-radius:50%;
+  background:var(--bg);
+  border:1.5px solid var(--line);
+  color:var(--ink);
+  display:flex;align-items:center;justify-content:center;
+  font-size:17px;
+}
+.btn-icon:hover:not(:disabled){ border-color:var(--accent-deep); color:var(--accent-deep); }
+
+.btn-main{
+  width:66px;height:66px;
+  border-radius:50%;
+  background:var(--accent);
+  color:#fff;
+  font-size:22px;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 8px 20px -8px rgba(198,125,28,0.65);
+}
+.btn-main:hover:not(:disabled){ background:var(--accent-deep); }
+
+.btn-stop{
+  width:46px;height:46px;
+  border-radius:50%;
+  background:var(--danger-bg);
+  border:1.5px solid transparent;
+  color:var(--danger);
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;
+}
+.btn-stop:hover:not(:disabled){ background:var(--danger); color:#fff; }
+
+.hint{
+  text-align:center;
+  font-size:12px;
+  color:var(--ink-soft);
+  margin-top:16px;
+}
+
+.panels{ margin-top:14px; display:flex; flex-direction:column; gap:10px; }
+
+.panel{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:16px;
+  overflow:hidden;
+}
+.panel-toggle{
+  width:100%;
+  background:none;
+  padding:13px 18px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  font-size:13.5px;
+  font-weight:500;
+  color:var(--ink);
+}
+.panel-toggle .chev{ color:var(--ink-soft); transition:transform .2s ease; font-size:11px;}
+.panel-toggle.open .chev{ transform:rotate(180deg); }
+.panel-body{
+  max-height:0;
+  overflow:hidden;
+  transition:max-height .25s ease;
+  border-top:1px solid transparent;
+}
+.panel-body.open{
+  max-height:700px;
+  border-top:1px solid var(--line);
+}
+.panel-body-inner{ padding:16px 18px 18px; }
+
+.setting-row{ margin-bottom:16px; }
+.setting-row:last-child{ margin-bottom:0; }
+.setting-row label{
+  display:flex;
+  justify-content:space-between;
+  font-size:12.5px;
+  color:var(--ink-soft);
+  margin-bottom:6px;
+}
+.setting-row label span.val{ color:var(--ink); font-weight:700; }
+input[type=range]{
+  width:100%;
+  accent-color:var(--accent-deep);
+}
+select{
+  width:100%;
+  padding:9px 10px;
+  border-radius:9px;
+  border:1.5px solid var(--line);
+  background:var(--bg);
+  font-family:'Noto Sans JP', sans-serif;
+  font-size:13px;
+  color:var(--ink);
+}
+
+table{ width:100%; border-collapse:collapse; font-size:12.5px; }
+th,td{ text-align:left; padding:7px 6px; border-bottom:1px solid var(--line); vertical-align:top; }
+th{ color:var(--ink-soft); font-weight:500; width:26px; }
+td.ans{ width:34px; font-weight:700; color:var(--accent-deep); text-align:center; }
+tr.active td{ background:#FBF3E4; }
+tr.note td{ color:var(--ink-soft); font-style:italic; }
+
+.warn{
+  background:var(--danger-bg);
+  border:1px solid #F0CFC6;
+  color:var(--danger);
+  border-radius:12px;
+  padding:12px 14px;
+  font-size:12.5px;
+  margin-bottom:16px;
+  line-height:1.6;
+  display:none;
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="masthead">
+    <h1>日本語リスニング理解度テスト</h1>
+    <p>スタッフが「開始」を押すと、案内文→全8問→終了案内の順に自動で読み上げます。1問読み上げたあと、受験者が解答用紙に記入する時間を空けてから、次の問題に進みます。</p>
+  </div>
+
+  <div class="card">
+    <div id="warn" class="warn"></div>
+
+    <div class="dots" id="dots"></div>
+
+    <div class="stage">
+      <div class="ring-wrap">
+        <svg width="196" height="196" viewBox="0 0 196 196">
+          <circle class="ring-track" cx="98" cy="98" r="88"></circle>
+          <circle class="ring-progress" id="ring" cx="98" cy="98" r="88"
+                  stroke-dasharray="553" stroke-dashoffset="553"></circle>
+        </svg>
+        <div class="numeral" id="numeral">－<small>／ 8</small></div>
+      </div>
+
+      <div class="status" id="status">
+        <span>開始ボタンを押してください</span>
+      </div>
+
+      <div class="controls">
+        <button class="btn-icon" id="btnPrev" title="前の問題へ" disabled>‹</button>
+        <button class="btn-icon" id="btnReplay" title="現在の音声をもう一度再生" disabled>↺</button>
+        <button class="btn-main" id="btnMain" title="開始">▶</button>
+        <button class="btn-icon" id="btnNext" title="次の問題へ" disabled>›</button>
+        <button class="btn-stop" id="btnStop" title="停止してリセット" disabled>■</button>
+      </div>
+
+      <div class="hint" id="hint">案内 → 全8問 → 終了案内</div>
+    </div>
+  </div>
+
+  <div class="panels">
+    <div class="panel">
+      <button class="panel-toggle" id="toggleSettings">
+        <span>再生設定（速度・間隔・音声）</span><span class="chev">▾</span>
+      </button>
+      <div class="panel-body" id="bodySettings">
+        <div class="panel-body-inner">
+          <div class="setting-row">
+            <label>読み上げ速度 <span class="val" id="rateVal">1.0倍</span></label>
+            <input type="range" id="rateRange" min="0.7" max="1.3" step="0.05" value="1.0">
+          </div>
+          <div class="setting-row">
+            <label>問題の間隔（回答時間） <span class="val" id="gapVal">6秒</span></label>
+            <input type="range" id="gapRange" min="3" max="15" step="1" value="6">
+          </div>
+          <div class="setting-row">
+            <label>音声</label>
+            <select id="voiceSelect"></select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <button class="panel-toggle" id="toggleStaff">
+        <span>スタッフ用：読み上げ文と正解を表示</span><span class="chev">▾</span>
+      </button>
+      <div class="panel-body" id="bodyStaff">
+        <div class="panel-body-inner">
+          <table>
+            <thead><tr><th>問</th><th>読み上げ文</th><th>正解</th></tr></thead>
+            <tbody id="staffTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const INTRO_TEXT = "今から文章を読みます。当てはまるものに丸をつけてください。";
+const OUTRO_TEXT = "問題は以上になります。お疲れさまでした。";
+
+const QUESTIONS = [
+  { text: "次の交差点を直進してください。", answer: "A" },
+  { text: "ハンドルを左に回してください。", answer: "B" },
+  { text: "スピードを落としてください。", answer: "A" },
+  { text: "次の交差点を左に曲がってください。", answer: "D" },
+  { text: "左と右の確認をしてください。", answer: "C" },
+  { text: "左の指示器を出してください。", answer: "B" },
+  { text: "自転車はどれですか？", answer: "C" },
+  { text: "次の交差点を右に曲がってください。", answer: "D" },
+];
+const TOTAL = QUESTIONS.length;
+const RING_CIRC = 553;
+
+// ---- state ----
+let idx = 0;
+let stage = "idle";       // idle | intro | question | outro | finished
+let playState = "idle";   // idle | speaking | waiting | paused
+let pausedFrom = null;    // 'speaking' | 'waiting'  (only meaningful within 'question' stage; intro/outro pause resumes speech directly)
+let rate = 1.0;
+let gapSeconds = 6;
+let remainingMs = 0;
+let tickHandle = null;
+let lastTick = null;
+let selectedVoice = null;
+
+// ---- dom ----
+const dotsEl = document.getElementById('dots');
+const numeralEl = document.getElementById('numeral');
+const statusEl = document.getElementById('status');
+const ringEl = document.getElementById('ring');
+const hintEl = document.getElementById('hint');
+const btnMain = document.getElementById('btnMain');
+const btnPrev = document.getElementById('btnPrev');
+const btnNext = document.getElementById('btnNext');
+const btnReplay = document.getElementById('btnReplay');
+const btnStop = document.getElementById('btnStop');
+const warnEl = document.getElementById('warn');
+const staffTbody = document.getElementById('staffTbody');
+const rateRange = document.getElementById('rateRange');
+const rateVal = document.getElementById('rateVal');
+const gapRange = document.getElementById('gapRange');
+const gapVal = document.getElementById('gapVal');
+const voiceSelect = document.getElementById('voiceSelect');
+
+// ---- build dots ----
+for(let i=0;i<TOTAL;i++){
+  const d = document.createElement('div');
+  d.className='dot';
+  d.textContent = i+1;
+  d.addEventListener('click', ()=>{
+    if(stage==='question' && playState==='speaking') return;
+    stopAll();
+    idx = i;
+    renderIdle();
+  });
+  dotsEl.appendChild(d);
+}
+
+// ---- build staff table ----
+const introRow = document.createElement('tr');
+introRow.className='note';
+introRow.innerHTML = `<td>案内</td><td>${INTRO_TEXT}</td><td>—</td>`;
+staffTbody.appendChild(introRow);
+
+QUESTIONS.forEach((q,i)=>{
+  const tr = document.createElement('tr');
+  tr.id = 'staffRow'+i;
+  tr.innerHTML = `<td>${i+1}</td><td>${q.text}</td><td class="ans">${q.answer}</td>`;
+  staffTbody.appendChild(tr);
+});
+
+const outroRow = document.createElement('tr');
+outroRow.className='note';
+outroRow.innerHTML = `<td>終了</td><td>${OUTRO_TEXT}</td><td>—</td>`;
+staffTbody.appendChild(outroRow);
+
+function updateDots(){
+  const dots = dotsEl.children;
+  for(let i=0;i<TOTAL;i++){
+    dots[i].classList.remove('current','done');
+    if(stage==='outro' || stage==='finished'){
+      dots[i].classList.add('done');
+      continue;
+    }
+    if(stage==='idle' || stage==='intro'){
+      continue;
+    }
+    if(i < idx) dots[i].classList.add('done');
+    if(i === idx) dots[i].classList.add('current');
+  }
+}
+function highlightStaffRow(){
+  document.querySelectorAll('#staffTbody tr').forEach(tr=>tr.classList.remove('active'));
+  if(stage==='intro'){ introRow.classList.add('active'); }
+  else if(stage==='outro'){ outroRow.classList.add('active'); }
+  else if(stage==='question'){
+    const row = document.getElementById('staffRow'+idx);
+    if(row) row.classList.add('active');
+  }
+}
+
+function setRing(fraction){
+  ringEl.style.strokeDashoffset = RING_CIRC * (1-fraction);
+}
+
+function renderIdle(){
+  stage='idle'; playState='idle';
+  numeralEl.classList.remove('label');
+  numeralEl.innerHTML = '－<small>／ '+TOTAL+'</small>';
+  statusEl.className='status';
+  statusEl.innerHTML='<span>開始ボタンを押してください</span>';
+  ringEl.style.stroke = 'var(--accent)';
+  setRing(0);
+  hintEl.textContent = '案内 → 全'+TOTAL+'問 → 終了案内';
+  btnMain.textContent='▶';
+  btnMain.title='開始';
+  btnMain.disabled=false;
+  btnPrev.disabled=true;
+  btnNext.disabled=true;
+  btnReplay.disabled=true;
+  btnStop.disabled=true;
+  updateDots(); highlightStaffRow();
+}
+
+function renderIntro(){
+  stage='intro'; playState='speaking';
+  numeralEl.classList.add('label');
+  numeralEl.textContent='案内';
+  statusEl.className='status';
+  statusEl.innerHTML='<span class="pulse"></span><span>案内文を読み上げています…</span>';
+  ringEl.style.stroke='var(--accent)';
+  setRing(1);
+  hintEl.textContent='開始のアナウンスを読み上げています';
+  btnMain.textContent='❚❚';
+  btnMain.title='一時停止';
+  btnMain.disabled=false;
+  btnPrev.disabled=true;
+  btnNext.disabled=false;
+  btnReplay.disabled=false;
+  btnStop.disabled=false;
+  updateDots(); highlightStaffRow();
+}
+
+function renderOutro(){
+  stage='outro'; playState='speaking';
+  numeralEl.classList.add('label');
+  numeralEl.textContent='終了案内';
+  statusEl.className='status';
+  statusEl.innerHTML='<span class="pulse"></span><span>終了のあいさつを読み上げています…</span>';
+  ringEl.style.stroke='var(--success)';
+  setRing(1);
+  hintEl.textContent='まもなく終了します';
+  btnMain.textContent='❚❚';
+  btnMain.title='一時停止';
+  btnMain.disabled=false;
+  btnPrev.disabled=true;
+  btnNext.disabled=true;
+  btnReplay.disabled=true;
+  btnStop.disabled=false;
+  updateDots(); highlightStaffRow();
+}
+
+function renderFinished(){
+  stage='finished'; playState='idle';
+  numeralEl.classList.remove('label');
+  numeralEl.innerHTML='✓<small>／ '+TOTAL+'</small>';
+  statusEl.className='status finished';
+  statusEl.innerHTML='<span class="pulse"></span><span>全問終了しました</span>';
+  ringEl.style.stroke='var(--success)';
+  setRing(1);
+  hintEl.textContent='もう一度行う場合は停止してからスタートしてください';
+  btnMain.textContent='▶';
+  btnMain.disabled=true;
+  btnPrev.disabled=false;
+  btnNext.disabled=true;
+  btnReplay.disabled=true;
+  btnStop.disabled=false;
+  updateDots(); highlightStaffRow();
+}
+
+function renderSpeaking(){
+  stage='question'; playState='speaking';
+  numeralEl.classList.remove('label');
+  numeralEl.innerHTML=(idx+1)+'<small>／ '+TOTAL+'</small>';
+  statusEl.className='status';
+  statusEl.innerHTML='<span class="pulse"></span><span>読み上げ中…</span>';
+  ringEl.style.stroke='var(--accent)';
+  setRing(1);
+  hintEl.textContent='問題 '+(idx+1)+' を読み上げています';
+  btnMain.textContent='❚❚';
+  btnMain.title='一時停止';
+  btnMain.disabled=false;
+  btnPrev.disabled = idx===0;
+  btnNext.disabled=false;
+  btnReplay.disabled=false;
+  btnStop.disabled=false;
+  updateDots(); highlightStaffRow();
+}
+
+function renderWaiting(){
+  stage='question'; playState='waiting';
+  numeralEl.classList.remove('label');
+  numeralEl.innerHTML=(idx+1)+'<small>／ '+TOTAL+'</small>';
+  statusEl.className='status';
+  const secs = Math.ceil(remainingMs/1000);
+  statusEl.innerHTML='<span class="pulse"></span><span>回答時間：残り '+secs+' 秒</span>';
+  ringEl.style.stroke='var(--accent-deep)';
+  hintEl.textContent='この間に解答用紙へ記入してください';
+  btnMain.textContent='❚❚';
+  btnMain.title='一時停止';
+  btnMain.disabled=false;
+  btnPrev.disabled = idx===0;
+  btnNext.disabled=false;
+  btnReplay.disabled=false;
+  btnStop.disabled=false;
+  updateDots(); highlightStaffRow();
+}
+
+function renderPaused(){
+  playState='paused';
+  statusEl.className='status';
+  statusEl.innerHTML='<span>一時停止中</span>';
+  btnMain.textContent='▶';
+  btnMain.title='再開';
+  hintEl.textContent='「再開」で続きから再生します';
+}
+
+// ---- speech ----
+function speak(text, onDone){
+  if(!('speechSynthesis' in window)){ onDone(); return; }
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang='ja-JP';
+  u.rate = rate;
+  if(selectedVoice) u.voice = selectedVoice;
+  u.onend = onDone;
+  u.onerror = onDone;
+  window.speechSynthesis.speak(u);
+}
+
+function startWait(){
+  remainingMs = gapSeconds*1000;
+  renderWaiting();
+  lastTick = performance.now();
+  clearInterval(tickHandle);
+  tickHandle = setInterval(tickFn, 100);
+}
+function tickFn(){
+  const now = performance.now();
+  const delta = now-lastTick;
+  lastTick = now;
+  remainingMs -= delta;
+  if(remainingMs<=0){
+    clearInterval(tickHandle);
+    setRing(0);
+    advance();
+  } else {
+    setRing(remainingMs/(gapSeconds*1000));
+    const secs = Math.ceil(remainingMs/1000);
+    const span = statusEl.querySelector('span:last-child');
+    if(span) span.textContent = '回答時間：残り '+secs+' 秒';
+  }
+}
+
+function playIntro(){
+  renderIntro();
+  speak(INTRO_TEXT, ()=>{
+    if(stage==='intro'){ idx=0; playCurrent(); }
+  });
+}
+
+function playCurrent(){
+  renderSpeaking();
+  speak('第'+(idx+1)+'問。', ()=>{
+    if(stage!=='question' || playState!=='speaking') return;
+    setTimeout(()=>{
+      if(stage!=='question' || playState!=='speaking') return;
+      speak(QUESTIONS[idx].text, ()=>{
+        if(stage==='question' && playState==='speaking'){ startWait(); }
+      });
+    }, 1000);
+  });
+}
+
+function playOutro(){
+  renderOutro();
+  speak(OUTRO_TEXT, ()=>{
+    if(stage==='outro'){ renderFinished(); }
+  });
+}
+
+function advance(){
+  if(idx < TOTAL-1){
+    idx++;
+    playCurrent();
+  } else {
+    playOutro();
+  }
+}
+
+function stopAll(){
+  clearInterval(tickHandle);
+  if('speechSynthesis' in window) window.speechSynthesis.cancel();
+}
+
+// ---- controls ----
+btnMain.addEventListener('click', ()=>{
+  if(stage==='idle'){
+    playIntro();
+  } else if(playState==='speaking'){
+    window.speechSynthesis.pause();
+    pausedFrom='speaking';
+    renderPaused();
+  } else if(playState==='waiting'){
+    clearInterval(tickHandle);
+    pausedFrom='waiting';
+    renderPaused();
+  } else if(playState==='paused'){
+    if(pausedFrom==='speaking'){
+      window.speechSynthesis.resume();
+      playState='speaking';
+      statusEl.className='status';
+      statusEl.innerHTML='<span class="pulse"></span><span>読み上げ中…</span>';
+      btnMain.textContent='❚❚'; btnMain.title='一時停止';
+    } else if(pausedFrom==='waiting'){
+      playState='waiting';
+      statusEl.className='status';
+      const secs = Math.ceil(remainingMs/1000);
+      statusEl.innerHTML='<span class="pulse"></span><span>回答時間：残り '+secs+' 秒</span>';
+      btnMain.textContent='❚❚'; btnMain.title='一時停止';
+      lastTick = performance.now();
+      clearInterval(tickHandle);
+      tickHandle = setInterval(tickFn, 100);
+    }
+  }
+});
+
+btnReplay.addEventListener('click', ()=>{
+  stopAll();
+  if(stage==='intro'){ playIntro(); }
+  else if(stage==='question'){ playCurrent(); }
+});
+
+btnPrev.addEventListener('click', ()=>{
+  if(stage!=='question') return;
+  stopAll();
+  if(idx>0) idx--;
+  playCurrent();
+});
+
+btnNext.addEventListener('click', ()=>{
+  stopAll();
+  if(stage==='intro'){ idx=0; playCurrent(); return; }
+  if(stage!=='question') return;
+  if(idx < TOTAL-1){
+    idx++;
+    playCurrent();
+  } else {
+    playOutro();
+  }
+});
+
+btnStop.addEventListener('click', ()=>{
+  stopAll();
+  idx = 0;
+  pausedFrom = null;
+  renderIdle();
+});
+
+// ---- settings ----
+rateRange.addEventListener('input', ()=>{
+  rate = parseFloat(rateRange.value);
+  rateVal.textContent = rate.toFixed(2).replace(/0+$/,'').replace(/\.$/,'')+'倍';
+});
+gapRange.addEventListener('input', ()=>{
+  gapSeconds = parseInt(gapRange.value,10);
+  gapVal.textContent = gapSeconds+'秒';
+});
+
+function populateVoices(){
+  if(!('speechSynthesis' in window)) return;
+  const voices = window.speechSynthesis.getVoices().filter(v=>v.lang && v.lang.toLowerCase().startsWith('ja'));
+  voiceSelect.innerHTML='';
+  if(voices.length===0){
+    const opt = document.createElement('option');
+    opt.textContent='既定の音声（日本語音声が見つかりません）';
+    voiceSelect.appendChild(opt);
+    return;
+  }
+  voices.forEach((v,i)=>{
+    const opt = document.createElement('option');
+    opt.value=i;
+    opt.textContent = v.name + (v.localService ? '' : '（オンライン）');
+    voiceSelect.appendChild(opt);
+  });
+  selectedVoice = voices[0];
+  voiceSelect.onchange = ()=>{ selectedVoice = voices[voiceSelect.value]; };
+}
+if('speechSynthesis' in window){
+  populateVoices();
+  window.speechSynthesis.onvoiceschanged = populateVoices;
+} else {
+  warnEl.style.display='block';
+  warnEl.textContent = 'このブラウザは音声読み上げ（Web Speech API）に対応していません。最新のChromeまたはEdgeでお試しください。';
+  btnMain.disabled = true;
+}
+
+// ---- collapsible panels ----
+function wireToggle(toggleId, bodyId){
+  const t = document.getElementById(toggleId);
+  const b = document.getElementById(bodyId);
+  t.addEventListener('click', ()=>{
+    const open = b.classList.toggle('open');
+    t.classList.toggle('open', open);
+  });
+}
+wireToggle('toggleSettings','bodySettings');
+wireToggle('toggleStaff','bodyStaff');
+
+// ---- init ----
+renderIdle();
+</script>
+</body>
+</html>
 
